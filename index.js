@@ -3,6 +3,8 @@ const cors = require("cors");
 const { default: mongoose, Mongoose } = require("mongoose");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
+const User = require("./models/User");
+const jwt = require("jsonwebtoken");
 
 const authRoutes = require("./routes/authRoutes");
 
@@ -11,7 +13,7 @@ const PORT = 3001;
 const MONGO_URI = "mongodb+srv://jaydev:llm_teacher@llm-teacher.ngvct.mongodb.net/llm_teacher"
 
 // Middleware
-app.use(cors({ credentials: true, origin: "http://localhost:3000" })); // Adjust origin for frontend
+app.use(cors({ credentials: true, origin: process.env.FRONTEND_URL || "http://localhost:3000" })); // Adjust origin for frontend
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoutes)
@@ -156,6 +158,37 @@ app.get("/api/getSubModules", async (req, res) => {
   console.log("SubModules:", subModules);
   
   res.json({ subModules });
+});
+
+app.get("/api/userDetails", async (req, res) => {
+  try {
+    const token = req.cookies.token; // Extract JWT from cookies
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Verify and decode JWT
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const email = decoded.email;
+
+    if (!email) {
+      return res.status(400).json({ message: "Invalid token" });
+    }
+
+    // Fetch user details from MongoDB
+    const user = await User.findOne({ email }, { password: 0 }); // Exclude password field
+
+    if (!user) {
+      console.log("User not found");
+      
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
 });
 
 // Start the server
