@@ -13,11 +13,17 @@ const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 
 // Middleware
-app.use(cors({ credentials: true, origin: process.env.FRONTEND_URL || "http://localhost:3000" })); // Adjust origin for frontend
+app.use(
+  cors({
+    credentials: true,
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+); // Adjust origin for frontend
 app.use(express.json());
 app.use(cookieParser());
-app.use("/api/auth", authRoutes)
-
+app.use("/api/auth", authRoutes);
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI, {
@@ -28,46 +34,62 @@ mongoose.connect(MONGO_URI, {
 // Define a Mongoose model
 const { Schema, Types } = mongoose;
 
-const Module = mongoose.model("generated_modules", new Schema({
-  request_id: {
-    type: Types.ObjectId
-  },
-  modules: [{
-    module_name: String,
-    description: String,
+const Module = mongoose.model(
+  "generated_modules",
+  new Schema({
+    request_id: {
+      type: Types.ObjectId,
+    },
+    modules: [
+      {
+        module_name: String,
+        description: String,
+        module_id: String,
+      },
+    ],
+  })
+);
+
+const SubModule = mongoose.model(
+  "generated_submodules",
+  new Schema({
+    topic_id: String,
     module_id: String,
-  }],
-}));
+    revised: Boolean,
+    submodules: [
+      {
+        sub_module_name: String,
+        description: String,
+        sub_module_id: String,
+      },
+    ],
+  })
+);
 
-const SubModule = mongoose.model("generated_submodules", new Schema({
-  topic_id: String,
-  module_id: String,
-  revised: Boolean,
-  submodules: [{
-    sub_module_name: String,
-    description: String,
+const SubModuleContent = mongoose.model(
+  "generated_lesson_content",
+  new Schema({
     sub_module_id: String,
-  }],
-}));
+    content: String,
+  })
+);
 
-const SubModuleContent = mongoose.model("generated_lesson_content", new Schema({
-  sub_module_id: String,
-  content: String,
-}));
-
-const HandleRequest = mongoose.model("handle_request", new mongoose.Schema({
-  user_id: String,
-  topic: String,
-  current_status: Number,
-  progress: {
-    module_gen: Number,
-    sub_module_gen: Number,
-    revised_submodule: Number,
-    content_gen: Number
-  },
-  created_at: Date,
-  updated_at: Date
-}));
+const HandleRequest = mongoose.model(
+  "handle_request",
+  new mongoose.Schema({
+    user_id: String,
+    topic: String,
+    current_status: Number,
+    progress: {
+      module_gen: Number,
+      sub_module_gen: Number,
+      revised_submodule: Number,
+      content_gen: Number,
+    },
+    created_at: Date,
+    updated_at: Date,
+  })
+);
 
 // Function to save a HabdleRequest
 async function saveHandleRequest(handleRequest) {
@@ -81,7 +103,6 @@ async function saveHandleRequest(handleRequest) {
     throw error;
   }
 }
-
 
 // Function to find a document by requestId
 async function findModuleByRequestId(requestId) {
@@ -103,7 +124,7 @@ db.once("open", () => {
 app.get("/api/search", async (req, res) => {
   const { search } = req.query;
   console.log("Search query:", search);
-  
+
   // get the search query and create a HandleRequest object with topic as search query and save it to the database
   const handleRequest = {
     user_id: "123",
@@ -113,10 +134,10 @@ app.get("/api/search", async (req, res) => {
       module_gen: 0,
       sub_module_gen: 0,
       revised_submodule: 0,
-      content_gen: 0
+      content_gen: 0,
     },
     created_at: new Date(),
-    updated_at: new Date()
+    updated_at: new Date(),
   };
   const response = await saveHandleRequest(handleRequest);
   res.json({ requestId: `${response._id}` });
@@ -131,8 +152,6 @@ app.get("/api/getCurrentStatus", async (req, res) => {
   res.json({ current_status: handleRequest.current_status });
 });
 
-
-
 app.get("/api/getSubmoduleContent", (req, res) => {
   const { submoduleId } = req.query;
   console.log("Submodule ID:", submoduleId);
@@ -142,21 +161,21 @@ app.get("/api/getSubmoduleContent", (req, res) => {
 app.get("/api/getModules", async (req, res) => {
   const { requestId } = req.query;
   console.log("Request ID:", requestId);
-  
+
   // const requestId = 1;
   const modules = await findModuleByRequestId(requestId);
   console.log("Modules:", modules);
-  
+
   res.json({ modules });
 });
 
 app.get("/api/getSubModules", async (req, res) => {
   const { moduleId } = req.query;
   console.log("Module ID:", moduleId);
-  
+
   const subModules = await SubModule.findOne({ module_id: moduleId });
   console.log("SubModules:", subModules);
-  
+
   res.json({ subModules });
 });
 
@@ -180,14 +199,16 @@ app.get("/api/userDetails", async (req, res) => {
 
     if (!user) {
       console.log("User not found");
-      
+
       return res.status(404).json({ message: "User not found" });
     }
 
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user details:", error);
-    res.status(500).json({ message: "Internal Server Error", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 });
 
