@@ -3,14 +3,14 @@ const cors = require("cors");
 const { default: mongoose, Mongoose } = require("mongoose");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
-const User = require("./models/User");
+const User = require("./models/user");
 const jwt = require("jsonwebtoken");
 
 const authRoutes = require("./routes/authRoutes");
 
 const app = express();
-const PORT = 3001;
-const MONGO_URI = "mongodb+srv://jaydev:llm_teacher@llm-teacher.ngvct.mongodb.net/llm_teacher"
+const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI;
 
 // Middleware
 app.use(cors({ credentials: true, origin: process.env.FRONTEND_URL || "http://localhost:3000" })); // Adjust origin for frontend
