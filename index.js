@@ -24,6 +24,10 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoutes);
+app.use((req, res, next) => {
+  res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
+  next();
+});
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI, {
