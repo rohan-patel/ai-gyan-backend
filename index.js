@@ -12,11 +12,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGO_URI;
 
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+console.log("Frontend URL:", FRONTEND_URL);
+
+
 // Middleware
 app.use(
   cors({
     credentials: true,
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: FRONTEND_URL,
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"],
   })
