@@ -47,6 +47,9 @@ const authController = {
       );
 
       // Set token in HTTP-only cookie
+      const environment = process.env.NODE_ENV;
+      console.log("ENV: ", environment);
+      
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production", // Secure in production
